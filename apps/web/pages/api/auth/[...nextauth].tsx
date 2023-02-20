@@ -2,7 +2,7 @@ import type { UserPermissionRole } from "@prisma/client";
 import { IdentityProvider } from "@prisma/client";
 import { readFileSync } from "fs";
 import Handlebars from "handlebars";
-import type { Session } from "next-auth";
+import type { NextAuthOptions, Session } from "next-auth";
 import NextAuth from "next-auth";
 import { encode } from "next-auth/jwt";
 import type { Provider } from "next-auth/providers";
@@ -248,7 +248,7 @@ function isNumber(n: string) {
 
 const calcomAdapter = CalComAdapter(prisma);
 
-export default NextAuth({
+export const authOptions: NextAuthOptions = {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   adapter: calcomAdapter,
@@ -543,4 +543,6 @@ export default NextAuth({
       return baseUrl;
     },
   },
-});
+};
+
+export default NextAuth(authOptions);

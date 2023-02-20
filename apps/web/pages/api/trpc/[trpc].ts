@@ -1,8 +1,10 @@
 /**
  * This file contains tRPC's HTTP response handler
  */
+import { authOptions } from "pages/api/auth/[...nextauth]";
 import { z } from "zod";
 
+import { getServerSession } from "@calcom/lib/auth";
 import * as trpcNext from "@calcom/trpc/server/adapters/next";
 import { createContext } from "@calcom/trpc/server/createContext";
 import { appRouter } from "@calcom/trpc/server/routers/_app";
@@ -12,7 +14,7 @@ export default trpcNext.createNextApiHandler({
   /**
    * @link https://trpc.io/docs/context
    */
-  createContext,
+  createContext: (ctx) => createContext(ctx, () => getServerSession(ctx.req, ctx.res, authOptions)),
   /**
    * @link https://trpc.io/docs/error-handling
    */

@@ -1,11 +1,14 @@
 import { IdentityProvider } from "@prisma/client";
 import { compare, hash } from "bcryptjs";
-import type { NextApiRequest } from "next";
-import type { Session } from "next-auth";
+import type { NextApiRequest, GetServerSidePropsContext } from "next";
+import type { NextAuthOptions, Session } from "next-auth";
+import { getServerSession as getServerSessionInner } from "next-auth/next";
 import type { GetSessionParams } from "next-auth/react";
 import { getSession as getSessionInner } from "next-auth/react";
 
 import { HttpError } from "@calcom/lib/http-error";
+
+import { timing } from "./performance";
 
 export async function hashPassword(password: string) {
   const hashedPassword = await hash(password, 12);
@@ -31,6 +34,18 @@ export async function getSession(options: GetSessionParams): Promise<Session | n
   const session = await getSessionInner(options);
 
   // that these are equal are ensured in `[...nextauth]`'s callback
+  return session as Session | null;
+}
+
+export async function getServerSession(
+  req: GetServerSidePropsContext["req"],
+  res: GetServerSidePropsContext["res"],
+  authOptions: NextAuthOptions
+) {
+  const sessionTiming = timing("getServerSession => session");
+  const session = await getServerSessionInner(req, res, authOptions);
+  sessionTiming();
+
   return session as Session | null;
 }
 

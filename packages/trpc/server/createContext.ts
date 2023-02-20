@@ -5,12 +5,13 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { getSession } from "@calcom/lib/auth";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getLocaleFromHeaders } from "@calcom/lib/i18n";
+import { timing } from "@calcom/lib/performance";
 import { defaultAvatarSrc } from "@calcom/lib/profile";
 import prisma from "@calcom/prisma";
 
-import * as trpc from "@trpc/server";
-import { Maybe } from "@trpc/server";
-import * as trpcNext from "@trpc/server/adapters/next";
+import type * as trpc from "@trpc/server";
+import type { Maybe } from "@trpc/server";
+import type * as trpcNext from "@trpc/server/adapters/next";
 
 type CreateContextOptions = trpcNext.CreateNextContextOptions | GetServerSidePropsContext;
 
@@ -130,11 +131,21 @@ export async function createContextInner(opts: CreateInnerContextOptions) {
  */
 export const createContext = async ({ req, res }: CreateContextOptions, sessionGetter = getSession) => {
   // for API-response caching see https://trpc.io/docs/caching
+  const sessionTiming = timing("createContext => session");
   const session = await sessionGetter({ req });
+  sessionTiming();
 
+  const userTiming = timing("createContext => user");
   const user = await getUserFromSession({ session, req });
+  userTiming();
+
+  const localeTiming = timing("createContext => locale");
   const locale = user?.locale ?? getLocaleFromHeaders(req);
+  localeTiming();
+
+  const i18nTiming = timing("createContext => i18n");
   const i18n = await serverSideTranslations(locale, ["common", "vital"]);
+  i18nTiming();
 
   const contextInner = await createContextInner({ session, i18n, locale, user });
   return {
